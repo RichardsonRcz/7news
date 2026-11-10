@@ -1,0 +1,1669 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>公开新闻阅读台 · 近 7 天</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1120;
+        --panel: #111c30;
+        --raised: #18263e;
+        --border: #293953;
+        --text: #edf2fa;
+        --muted: #a3b3c9;
+        --accent: #fbbf24;
+        --link: #9cc8ff;
+        --good: #67ddb1;
+        --bad: #ffa2a2;
+      }
+      :root[data-theme="light"] {
+        color-scheme: light;
+        --bg: #f2f5fa;
+        --panel: #fff;
+        --raised: #edf2f9;
+        --border: #d2dce9;
+        --text: #142238;
+        --muted: #52657d;
+        --accent: #a86300;
+        --link: #125fa8;
+        --good: #087955;
+        --bad: #b82f39;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.65 system-ui,
+          -apple-system,
+          "Microsoft YaHei",
+          sans-serif;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button,
+      a,
+      input,
+      select {
+        outline-offset: 4px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: wait;
+        opacity: 0.55;
+      }
+      a {
+        color: var(--link);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      button,
+      input,
+      select {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--raised);
+        color: var(--text);
+        padding: 8px 12px;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.active,
+      .primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #161c28;
+        font-weight: 650;
+      }
+      .subtle {
+        background: transparent;
+      }
+      .hidden,
+      [hidden] {
+        display: none !important;
+      }
+      header {
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+      }
+      .header-inner {
+        max-width: 1480px;
+        margin: auto;
+        padding: 22px 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      h1 {
+        font-size: 23px;
+        margin: 0;
+        letter-spacing: 0.04em;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 0 0 12px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .muted,
+      .meta {
+        color: var(--muted);
+      }
+      .small {
+        font-size: 12px;
+      }
+      .actions,
+      .row,
+      .pills {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .layout {
+        max-width: 1480px;
+        margin: auto;
+        padding: 24px 28px;
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 24px;
+      }
+      aside {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-self: start;
+      }
+      .panel,
+      .news-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+      .sidebar-btn {
+        width: 100%;
+        text-align: left;
+        margin: 4px 0;
+      }
+      .toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .toolbar input {
+        flex: 1;
+        min-width: 180px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      .stat {
+        background: var(--raised);
+        padding: 10px 4px;
+        text-align: center;
+        border-radius: 8px;
+      }
+      .stat strong {
+        display: block;
+        font-size: 24px;
+        color: var(--accent);
+      }
+      .stat span {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      nav {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .status {
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        margin-bottom: 14px;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+        background: var(--panel);
+      }
+      .status[data-kind="error"] {
+        border-left-color: var(--bad);
+      }
+      .status[data-kind="success"] {
+        border-left-color: var(--good);
+      }
+      .news-card {
+        margin-bottom: 14px;
+      }
+      .news-card h3 {
+        font-size: 18px;
+        line-height: 1.65;
+        margin: 12px 0;
+        overflow-wrap: anywhere;
+      }
+      .news-card .meta {
+        font-size: 12px;
+        display: flex;
+        gap: 8px 16px;
+        flex-wrap: wrap;
+      }
+      .card-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .badge {
+        display: inline-block;
+        background: var(--raised);
+        border: 1px solid var(--border);
+        padding: 2px 8px;
+        border-radius: 5px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .badge.publisher {
+        color: var(--good);
+      }
+      .empty {
+        padding: 48px 20px;
+        text-align: center;
+        background: var(--panel);
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+      }
+      .empty strong {
+        display: block;
+        font-size: 17px;
+      }
+      .feed-count {
+        margin: 12px 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .topic-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .topic-grid button {
+        text-align: left;
+        min-height: 100px;
+      }
+      .topic-grid strong {
+        font-size: 22px;
+        display: block;
+        color: var(--accent);
+      }
+      .field {
+        display: grid;
+        gap: 6px;
+        margin: 14px 0;
+      }
+      .field input,
+      .field select {
+        width: 100%;
+      }
+      details {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      summary {
+        cursor: pointer;
+      }
+      .word-break {
+        overflow-wrap: anywhere;
+      }
+      #bookmarkDialog {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--bg);
+        color: var(--text);
+        width: min(900px, 94vw);
+        max-height: 88vh;
+        padding: 24px;
+      }
+      #bookmarkDialog::backdrop {
+        background: #000a;
+      }
+      .dialog-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .dialog-foot {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+      footer {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 0 28px 30px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .notice {
+        border-left: 3px solid var(--accent);
+        padding: 8px 12px;
+        background: var(--raised);
+      }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      @media (max-width: 800px) {
+        .layout {
+          grid-template-columns: 1fr;
+          padding: 16px;
+        }
+        .header-inner {
+          padding: 18px 16px;
+        }
+        .layout aside {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .layout aside .filters {
+          grid-column: 1/-1;
+        }
+        .header-inner .actions {
+          width: 100%;
+        }
+        .toolbar {
+          align-items: stretch;
+        }
+        .news-card h3 {
+          font-size: 16px;
+        }
+        footer {
+          padding: 0 16px 24px;
+        }
+      }
+      @media (max-width: 480px) {
+        .layout aside {
+          grid-template-columns: 1fr;
+        }
+        .layout aside .filters {
+          grid-column: auto;
+        }
+        .panel,
+        .news-card {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <div>
+          <h1>公开新闻阅读台</h1>
+          <p class="muted small">
+            近 7 天 · 保留订阅源标题与发布时间 · 区分原站文章和聚合跳转
+          </p>
+        </div>
+        <div class="actions">
+          <button id="syncBtn" class="primary">刷新新闻</button
+          ><button id="bookmarksBtn">
+            收藏 <span id="bookmarkCount">0</span></button
+          ><button id="exportBtn">导出当前筛选</button
+          ><button id="themeBtn" aria-label="切换明暗主题">浅色</button>
+        </div>
+      </div>
+    </header>
+    <div class="layout">
+      <aside>
+        <section class="panel">
+          <h2>当前阅读范围</h2>
+          <div class="stats">
+            <div class="stat">
+              <strong id="statTotal">0</strong><span>近 7 天条目</span>
+            </div>
+            <div class="stat">
+              <strong id="statSources">0</strong><span>标注来源</span>
+            </div>
+            <div class="stat">
+              <strong id="statVisible">0</strong><span>筛选结果</span>
+            </div>
+          </div>
+          <div id="liveClock" class="meta small"></div>
+          <div id="lastSync" class="meta small">尚未采集</div>
+          <p class="muted small">
+            数字仅统计实际条目，不计算新闻强度或涨跌预测。
+          </p>
+        </section>
+        <section class="panel filters">
+          <h2>阅读筛选</h2>
+          <label class="field"
+            >时间窗口<select id="timeFilter">
+              <option value="1">过去 24 小时</option>
+              <option value="3">过去 3 天</option>
+              <option value="5">过去 5 天</option>
+              <option value="7" selected>过去 7 天</option>
+            </select></label
+          ><label class="field"
+            >文章来源<select id="publisherFilter">
+              <option value="ALL">全部来源</option>
+            </select></label
+          ><label class="field"
+            >主题（标题关键词）<select id="topicFilter">
+              <option value="ALL">全部主题</option>
+            </select></label
+          ><label class="field"
+            >标题语言<select id="languageFilter">
+              <option value="ALL">全部语言 / 原标题</option>
+              <option value="ZH">含中文标题</option>
+              <option value="OTHER">其他语言标题</option>
+            </select></label
+          ><button id="resetBtn" class="sidebar-btn subtle">重置筛选</button>
+          <p class="muted small">
+            主题来自标题关键词匹配；不代表正文分析、来源权威性或投资结论。
+          </p>
+        </section>
+        <section class="panel">
+          <h2>链接说明</h2>
+          <p class="small">
+            <span class="badge publisher">原站文章 · 域名匹配</span> 已取得与
+            RSS 标注来源同域的文章地址。
+          </p>
+          <p class="small">
+            <span class="badge">Google News 跳转</span>
+            订阅源提供的聚合链接，点击后由 Google 转往报道。
+          </p>
+          <p class="muted small">
+            来源名称和时间取自
+            RSS。域名匹配不等于已逐篇核验全文；转载站按实际发布站显示。
+          </p>
+        </section>
+      </aside>
+      <main>
+        <nav aria-label="内容视图">
+          <button class="active" data-tab="feed">新闻列表</button
+          ><button data-tab="topics">主题索引</button
+          ><button data-tab="sources">采集设置</button>
+        </nav>
+        <div id="status" class="status" role="status" aria-live="polite">
+          正在初始化阅读列表…
+        </div>
+        <section id="view-feed">
+          <div class="panel toolbar">
+            <label class="visually-hidden" for="searchInput"
+              >搜索标题或来源</label
+            ><input
+              id="searchInput"
+              type="search"
+              placeholder="搜索标题、文章来源或主题关键词"
+            /><label class="visually-hidden" for="sortSelect">排序方式</label
+            ><select id="sortSelect">
+              <option value="TIME">发布时间：最新优先</option>
+              <option value="SOURCE">按文章来源排序</option>
+            </select>
+          </div>
+          <div id="feedCount" class="feed-count"></div>
+          <div id="newsContainer"></div>
+        </section>
+        <section id="view-topics" hidden>
+          <div class="panel">
+            <h2>近 7 天主题索引</h2>
+            <p class="muted small">
+              基于近 7
+              天标题的关键词匹配；同一报道可以属于多个主题，不自动生成政策或市场判断。
+            </p>
+            <div id="topicGrid" class="topic-grid"></div>
+          </div>
+        </section>
+        <section id="view-sources" hidden>
+          <div class="panel">
+            <h2>采集公开新闻</h2>
+            <p class="muted">
+              默认检索官方发布、Reuters、Bloomberg
+              及政策产业报道。检索词只决定搜索范围，卡片上的来源取自实际 RSS
+              条目。
+            </p>
+            <p id="backendState" class="notice small">正在检测本机采集服务…</p>
+            <div id="channelList" class="stack"></div>
+            <label class="field"
+              >自定义 Google News 检索词<input
+                id="customQuery"
+                maxlength="300"
+                placeholder="例如：人工智能 OR 医疗 OR 地方债"
+            /></label>
+            <div class="row">
+              <button id="customFetchBtn" class="primary">采集自定义主题</button
+              ><button id="openSearchBtn">在 Google News 查看检索</button>
+            </div>
+            <p class="muted small">
+              所有条目都按真实发布时间过滤。日期缺失、无效、在未来或超过 7
+              天的条目不会进入新闻列表。
+            </p>
+            <details>
+              <summary>离线导入与备份</summary>
+              <p>
+                可导入 RSS / Atom 文件或本页面导出的 JSON
+                备份。离线导入的来源与地址按文件提供值显示，不宣称已联网核验。
+              </p>
+              <div class="row">
+                <label for="importFile">导入文件</label
+                ><input
+                  id="importFile"
+                  type="file"
+                  accept=".xml,.rss,.atom,.json,application/xml,text/xml,application/json"
+                /><button id="backupBtn">导出数据备份</button>
+              </div>
+            </details>
+            <details>
+              <summary>采集边界</summary>
+              <p>
+                采集器仅在本机回环地址运行，直接请求公开 Google News
+                RSS；不会绕过网站付费墙。原文地址按需解析，若解析失败或与来源域名不符，保留聚合跳转链接。订阅结果不保证覆盖全部公开报道。
+              </p>
+            </details>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer>
+      本页聚合公开新闻元数据，文章版权归原发布方。采集时间与文章发布时间分别记录；原英文标题保留，不伪造翻译或摘要。界面不依赖第三方
+      CDN。
+    </footer>
+    <dialog id="bookmarkDialog" aria-labelledby="bookmarkHeading">
+      <div class="dialog-head">
+        <div>
+          <h2 id="bookmarkHeading">我的新闻收藏</h2>
+          <span class="muted small"
+            >收藏保存完整条目；超过 7 天仍保留在这里。</span
+          >
+        </div>
+        <button id="closeBookmarksBtn" aria-label="关闭收藏">关闭</button>
+      </div>
+      <div id="bookmarkList"></div>
+      <div class="dialog-foot">
+        <span id="storageState" class="small muted"
+          >数据保存在此浏览器、此页面地址的本地存储中。</span
+        >
+        <div class="row">
+          <button id="clearBookmarksBtn">清空收藏</button
+          ><button id="exportBookmarksBtn" class="primary">导出收藏</button>
+        </div>
+      </div>
+    </dialog>
+    <script>
+      "use strict";
+      const DAY = 86400000,
+        STORE_KEY = "public_news_reader_v2";
+      const TOPICS = [
+        {
+          id: "POLICY",
+          name: "政治与公共政策",
+          pattern:
+            /国务院|国常会|政治局|财政|改革|央行|policy|stimulus|\bpboc\b/i,
+        },
+        {
+          id: "TECH",
+          name: "科技与产业",
+          pattern:
+            /科技|人工智能|算力|芯片|半导体|tech(?:nology)?|\bai\b|chip|semiconductor/i,
+        },
+        {
+          id: "HEALTH",
+          name: "医疗、养老与民生",
+          pattern: /医疗|医药|健康|养老|民生|医保|health|medical|pension/i,
+        },
+        {
+          id: "DEBT",
+          name: "债务与房地产",
+          pattern: /地方债|化债|债务|房地产|楼市|住房|debt|property|housing/i,
+        },
+        {
+          id: "TRADE",
+          name: "外交与经贸",
+          pattern:
+            /外交|关税|贸易|出口|进口|外交部|trade|tariff|export|diplomacy/i,
+        },
+        {
+          id: "ENERGY",
+          name: "能源与基础设施",
+          pattern:
+            /能源|电力|电网|基建|石油|天然气|energy|\boil\b|gas|infrastructure/i,
+        },
+      ];
+      const CHANNELS = [
+        {
+          id: "official",
+          name: "官方发布",
+          query:
+            "(site:gov.cn OR site:news.cn) (政策 OR 国务院 OR 经济) when:7d",
+        },
+        {
+          id: "reuters",
+          name: "Reuters",
+          query: "site:reuters.com (China OR Beijing OR PBOC) when:7d",
+        },
+        {
+          id: "bloomberg",
+          name: "Bloomberg",
+          query: "site:bloomberg.com (China OR Beijing OR economy) when:7d",
+        },
+        {
+          id: "policy",
+          name: "政策与产业",
+          query: "(财政部 OR 卫健委 OR 工信部 OR 科技 OR 能源) 政策 when:7d",
+        },
+      ];
+      let articles = [],
+        bookmarks = [],
+        lastSync = null,
+        backendReady = false,
+        syncing = false;
+      let storageAvailable = true,
+        lastResults = [],
+        storageIssue = "",
+        initialStorageIssue = "";
+      const pendingResolution = new Set(),
+        $ = (id) => document.getElementById(id);
+      function el(tag, text, cls) {
+        const node = document.createElement(tag);
+        if (text !== undefined) node.textContent = String(text);
+        if (cls) node.className = cls;
+        return node;
+      }
+      function safeUrl(value) {
+        try {
+          if (/[\u0000-\u001f\u007f]/.test(String(value))) return "";
+          const u = new URL(String(value));
+          return ["http:", "https:"].includes(u.protocol) &&
+            !u.username &&
+            !u.password
+            ? u.href
+            : "";
+        } catch {
+          return "";
+        }
+      }
+      function host(value) {
+        try {
+          return new URL(value).hostname.toLowerCase().replace(/\.$/, "");
+        } catch {
+          return "";
+        }
+      }
+      function under(name, domain) {
+        return name === domain || name.endsWith("." + domain);
+      }
+      function isAggregator(url) {
+        return (
+          host(url) === "news.google.com" &&
+          /^\/(?:rss\/)?(?:articles|read)\/[^/]+$/.test(new URL(url).pathname)
+        );
+      }
+      function canonical(url) {
+        const u = new URL(url);
+        u.hash = "";
+        if (isAggregator(url)) u.search = "";
+        return u.href;
+      }
+      function usableArticleUrl(value) {
+        const url = safeUrl(value);
+        if (!url) return "";
+        const u = new URL(url);
+        return u.pathname === "/" || u.pathname === "" ? "" : url;
+      }
+      function sourceKey(item) {
+        return host(item.publisherUrl) || "name:" + item.publisher;
+      }
+      function dateText(value) {
+        const d = new Date(value);
+        return Number.isFinite(d.getTime())
+          ? new Intl.DateTimeFormat("zh-CN", {
+              timeZone: "Asia/Shanghai",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hourCycle: "h23",
+            }).format(d) + " 北京时间"
+          : "日期无效";
+      }
+      function parseDate(value) {
+        if (!value || !String(value).trim()) return null;
+        const text = String(value).trim();
+        if (
+          !/(?:Z|[+-]\d{2}:?\d{2}|GMT|UTC|\b(?:UT|EST|EDT|CST|CDT|MST|MDT|PST|PDT))$/i.test(
+            text,
+          )
+        )
+          return null;
+        const ms = Date.parse(text);
+        return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+      }
+      function inWindow(item, days = 7, now = Date.now()) {
+        const age = now - Date.parse(item.publishedAt);
+        return Number.isFinite(age) && age >= 0 && age <= days * DAY;
+      }
+      function topicIds(item) {
+        const ids = TOPICS.filter((t) => t.pattern.test(item.title)).map(
+          (t) => t.id,
+        );
+        return ids.length ? ids : ["OTHER"];
+      }
+      function normalize(raw) {
+        if (
+          !raw ||
+          typeof raw !== "object" ||
+          typeof raw.title !== "string" ||
+          !raw.title.trim()
+        )
+          return null;
+        const url = usableArticleUrl(raw.url),
+          date = Date.parse(parseDate(raw.publishedAt));
+        if (!url || !Number.isFinite(date) || date > Date.now()) return null;
+        let publisher = String(raw.publisher || "来源未标注")
+            .trim()
+            .slice(0, 200),
+          publisherUrl = safeUrl(raw.publisherUrl);
+        const aggregator = isAggregator(url);
+        // A direct link's actual host wins over a contradictory imported publisher claim.
+        if (
+          !aggregator &&
+          publisherUrl &&
+          !under(host(url), host(publisherUrl).replace(/^www\./, ""))
+        ) {
+          publisher = host(url);
+          publisherUrl = new URL(url).origin;
+        }
+        if (!aggregator && !publisherUrl) {
+          publisher = host(url);
+          publisherUrl = new URL(url).origin;
+        }
+        const original = usableArticleUrl(raw.originalUrl),
+          matched =
+            original &&
+            !isAggregator(original) &&
+            publisherUrl &&
+            under(host(original), host(publisherUrl).replace(/^www\./, ""));
+        return {
+          id:
+            typeof raw.id === "string" && /^article-[a-f0-9]{24}$/.test(raw.id)
+              ? raw.id
+              : "import:" + canonical(url),
+          title: raw.title.trim().slice(0, 2000),
+          url: canonical(url),
+          publisher,
+          publisherUrl,
+          publishedAt: new Date(date).toISOString(),
+          collectedAt: parseDate(raw.collectedAt),
+          feedUrl: safeUrl(raw.feedUrl),
+          channel: String(raw.channel || "离线导入").slice(0, 200),
+          originalUrl: matched ? original : "",
+          linkKind: matched ? "publisher" : aggregator ? "aggregator" : "feed",
+          imported: !!raw.imported,
+        };
+      }
+      function articleKey(item) {
+        return canonical(item.url);
+      }
+      function mergeArticle(previous, current) {
+        return (
+          normalize({
+            ...previous,
+            ...current,
+            originalUrl: current.originalUrl || previous.originalUrl,
+          }) || current
+        );
+      }
+      function unique(items) {
+        const map = new Map();
+        items.forEach((item) => {
+          const key = articleKey(item),
+            old = map.get(key);
+          map.set(key, old ? mergeArticle(old, item) : item);
+        });
+        return [...map.values()];
+      }
+      function persist() {
+        try {
+          localStorage.setItem(
+            STORE_KEY,
+            JSON.stringify({
+              version: 2,
+              articles: articles.filter((a) => inWindow(a)).slice(0, 600),
+              bookmarks,
+              lastSync,
+            }),
+          );
+          storageAvailable = true;
+          storageIssue = "";
+        } catch {
+          storageAvailable = false;
+          storageIssue = "本地存储不可用或空间不足，刷新前请导出 JSON 备份。";
+        }
+        $("storageState").textContent = storageAvailable
+          ? "数据保存在此浏览器、此页面地址的本地存储中。"
+          : storageIssue;
+      }
+      function loadState() {
+        try {
+          const text = localStorage.getItem(STORE_KEY);
+          if (text) {
+            const data = JSON.parse(text);
+            if (
+              data.version !== 2 ||
+              !Array.isArray(data.articles) ||
+              !Array.isArray(data.bookmarks)
+            )
+              throw Error("Invalid cache");
+            articles = unique(data.articles.map(normalize).filter(Boolean))
+              .filter((a) => inWindow(a))
+              .slice(0, 600);
+            bookmarks = unique(
+              data.bookmarks.map(normalize).filter(Boolean),
+            ).slice(0, 1000);
+            lastSync = parseDate(data.lastSync);
+          } else if (localStorage.getItem("policy_7d_bookmarks"))
+            initialStorageIssue =
+              "旧版收藏仅保存临时编号，无法可靠还原标题与来源，因此未自动迁移；旧存储未删除。";
+        } catch {
+          initialStorageIssue =
+            "旧缓存损坏或存储不可用，已使用空列表启动；请导入有效备份。";
+        }
+      }
+      function status(message, kind = "info") {
+        $("status").textContent =
+          message + (storageIssue ? "\n" + storageIssue : "");
+        $("status").dataset.kind = kind;
+      }
+      function tab(name) {
+        document
+          .querySelectorAll("[data-tab]")
+          .forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+        ["feed", "topics", "sources"].forEach(
+          (t) => ($("view-" + t).hidden = t !== name),
+        );
+      }
+      function link(url, text) {
+        const a = el("a", text);
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        return a;
+      }
+      function rebuildPublishers() {
+        const select = $("publisherFilter"),
+          before = select.value,
+          choices = new Map();
+        articles
+          .filter((a) => inWindow(a))
+          .forEach((a) =>
+            choices.set(
+              sourceKey(a),
+              a.publisher +
+                (host(a.publisherUrl) ? " · " + host(a.publisherUrl) : ""),
+            ),
+          );
+        select.replaceChildren(new Option("全部来源", "ALL"));
+        [...choices]
+          .sort((a, b) => a[1].localeCompare(b[1], "zh-CN"))
+          .forEach(([id, name]) => select.add(new Option(name, id)));
+        select.value = choices.has(before) ? before : "ALL";
+      }
+      function filteredArticles() {
+        const now = Date.now(),
+          days = Number($("timeFilter").value),
+          query = $("searchInput").value.trim().toLocaleLowerCase();
+        return articles
+          .filter((a) => {
+            if (!inWindow(a, days, now)) return false;
+            if (
+              $("publisherFilter").value !== "ALL" &&
+              sourceKey(a) !== $("publisherFilter").value
+            )
+              return false;
+            if (
+              $("topicFilter").value !== "ALL" &&
+              !topicIds(a).includes($("topicFilter").value)
+            )
+              return false;
+            const zh = /[\u3400-\u9fff]/.test(a.title);
+            if (
+              ($("languageFilter").value === "ZH" && !zh) ||
+              ($("languageFilter").value === "OTHER" && zh)
+            )
+              return false;
+            return (
+              !query ||
+              [
+                a.title,
+                a.publisher,
+                host(a.publisherUrl),
+                ...TOPICS.filter((t) => topicIds(a).includes(t.id)).map(
+                  (t) => t.name,
+                ),
+              ]
+                .join(" ")
+                .toLocaleLowerCase()
+                .includes(query)
+            );
+          })
+          .sort((a, b) =>
+            $("sortSelect").value === "SOURCE"
+              ? a.publisher.localeCompare(b.publisher, "zh-CN") ||
+                Date.parse(b.publishedAt) - Date.parse(a.publishedAt)
+              : Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
+          );
+      }
+      function empty(message, explanation) {
+        const box = el("div", undefined, "empty");
+        box.append(el("strong", message), el("p", explanation, "muted"));
+        return box;
+      }
+      function renderCard(item, saved = false) {
+        const card = el("article", undefined, "news-card");
+        card.dataset.articleId = item.id;
+        const badges = el("div", undefined, "pills"),
+          kind = item.originalUrl
+            ? "publisher"
+            : isAggregator(item.url)
+              ? "aggregator"
+              : "feed";
+        badges.append(
+          el(
+            "span",
+            kind === "publisher"
+              ? "原站文章 · 域名匹配"
+              : kind === "aggregator"
+                ? "Google News 跳转"
+                : "订阅文件链接 · 未联网核验",
+            "badge" + (kind === "publisher" ? " publisher" : ""),
+          ),
+        );
+        topicIds(item).forEach((id) =>
+          badges.append(
+            el(
+              "span",
+              TOPICS.find((t) => t.id === id)?.name || "其他主题",
+              "badge",
+            ),
+          ),
+        );
+        if (item.imported) badges.append(el("span", "离线导入", "badge"));
+        if (saved && !inWindow(item))
+          badges.append(el("span", "已超出 7 天窗口", "badge"));
+        const heading = el("h3");
+        heading.append(link(item.originalUrl || item.url, item.title));
+        const meta = el("div", undefined, "meta");
+        meta.append(
+          el("span", "RSS 标注来源：" + item.publisher),
+          el("span", "发布：" + dateText(item.publishedAt)),
+        );
+        if (item.publisherUrl)
+          meta.append(el("span", "来源域名：" + host(item.publisherUrl)));
+        const actions = el("div", undefined, "card-actions");
+        actions.append(
+          link(
+            item.originalUrl || item.url,
+            kind === "publisher"
+              ? "打开原站文章 ↗"
+              : kind === "aggregator"
+                ? "通过 Google News 阅读 ↗"
+                : "打开订阅文件提供的链接 ↗",
+          ),
+        );
+        const fav = el(
+          "button",
+          bookmarks.some((b) => articleKey(b) === articleKey(item))
+            ? "取消收藏"
+            : "收藏",
+          "subtle",
+        );
+        fav.addEventListener("click", () => toggleBookmark(item));
+        actions.append(fav);
+        if (
+          kind === "aggregator" &&
+          backendReady &&
+          item.id.startsWith("article-")
+        ) {
+          const resolve = el(
+            "button",
+            pendingResolution.has(item.id) ? "正在解析原文…" : "解析原文地址",
+            "subtle",
+          );
+          resolve.disabled = pendingResolution.has(item.id);
+          resolve.addEventListener("click", () => resolveOriginal(item));
+          actions.append(resolve);
+        }
+        const detail = el("details"),
+          summary = el("summary", "查看来源与采集记录");
+        detail.append(
+          summary,
+          el(
+            "p",
+            "采集：" +
+              (item.collectedAt
+                ? dateText(item.collectedAt)
+                : "导入文件未提供采集时间"),
+          ),
+          el("p", "检索通道：" + item.channel + "（通道名称不作为文章来源）"),
+        );
+        if (item.publisherUrl) {
+          const p = el("p");
+          p.append(link(item.publisherUrl, "RSS 标注的发布站首页"));
+          detail.append(p);
+        }
+        if (item.feedUrl) {
+          const p = el("p");
+          p.append(link(item.feedUrl, "查看对应 RSS 订阅源"));
+          detail.append(p);
+        }
+        const original = el("p", undefined, "word-break");
+        original.append(el("span", "订阅条目链接："), link(item.url, item.url));
+        detail.append(original);
+        card.append(badges, heading, meta, actions, detail);
+        return card;
+      }
+      function render() {
+        const current = articles.filter((a) => inWindow(a));
+        lastResults = filteredArticles();
+        $("statTotal").textContent = current.length;
+        $("statSources").textContent = new Set(current.map(sourceKey)).size;
+        $("statVisible").textContent = lastResults.length;
+        $("bookmarkCount").textContent = bookmarks.length;
+        $("lastSync").textContent = lastSync
+          ? "最近成功同步：" + dateText(lastSync)
+          : "尚未成功采集";
+        $("feedCount").textContent =
+          "过去 " +
+          $("timeFilter").value +
+          " 天 · 当前 " +
+          lastResults.length +
+          " 条 / 缓存近 7 天 " +
+          current.length +
+          " 条";
+        const container = $("newsContainer");
+        container.replaceChildren();
+        if (!lastResults.length)
+          container.append(
+            empty(
+              current.length ? "当前筛选无匹配新闻" : "尚无近 7 天真实新闻",
+              current.length
+                ? "可重置筛选或调整搜索词。"
+                : "请刷新新闻，或在采集设置中导入 RSS / JSON。页面不填充模拟报道。",
+            ),
+          );
+        else {
+          const fragment = document.createDocumentFragment();
+          lastResults.forEach((a) => fragment.append(renderCard(a)));
+          container.append(fragment);
+        }
+        const grid = $("topicGrid");
+        grid.replaceChildren();
+        [...TOPICS, { id: "OTHER", name: "其他主题" }].forEach((topic) => {
+          const count = current.filter((a) =>
+            topicIds(a).includes(topic.id),
+          ).length;
+          const b = el("button");
+          b.append(
+            el("span", topic.name),
+            el("strong", count),
+            el("span", "条标题匹配 · 点击筛选", "small muted"),
+          );
+          b.addEventListener("click", () => {
+            $("topicFilter").value = topic.id;
+            tab("feed");
+            render();
+          });
+          grid.append(b);
+        });
+        renderBookmarks();
+      }
+      function resetFilters() {
+        $("timeFilter").value = "7";
+        $("publisherFilter").value = "ALL";
+        $("topicFilter").value = "ALL";
+        $("languageFilter").value = "ALL";
+        $("searchInput").value = "";
+        $("sortSelect").value = "TIME";
+        render();
+      }
+      function toggleBookmark(item) {
+        const key = articleKey(item),
+          index = bookmarks.findIndex((a) => articleKey(a) === key);
+        if (index >= 0) bookmarks.splice(index, 1);
+        else if (bookmarks.length >= 1000) {
+          status("收藏已达 1000 条，请先导出并整理收藏。", "error");
+          return;
+        } else bookmarks.push({ ...item });
+        persist();
+        render();
+      }
+      function renderBookmarks() {
+        const list = $("bookmarkList");
+        list.replaceChildren();
+        if (!bookmarks.length)
+          list.append(empty("暂无收藏", "在新闻卡片上点击“收藏”。"));
+        else
+          bookmarks
+            .slice()
+            .sort(
+              (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
+            )
+            .forEach((a) => list.append(renderCard(a, true)));
+      }
+      async function api(path, timeout = 20000) {
+        const controller = new AbortController(),
+          timer = setTimeout(() => controller.abort(), timeout);
+        try {
+          const response = await fetch(path, {
+            signal: controller.signal,
+            cache: "no-store",
+            credentials: "omit",
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw Error(data.error || "HTTP " + response.status);
+          }
+          return await response.json();
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      function explainError(error) {
+        return error.name === "AbortError"
+          ? "请求超时"
+          : String(error.message || error);
+      }
+      function busy(value) {
+        syncing = value;
+        $("syncBtn").disabled = value;
+        $("customFetchBtn").disabled = value;
+        document
+          .querySelectorAll("[data-fetch-channel]")
+          .forEach((b) => (b.disabled = value));
+        $("syncBtn").textContent = value ? "正在采集…" : "刷新新闻";
+      }
+      async function syncNews(custom = null, channel = null) {
+        if (syncing) return;
+        if (!backendReady) {
+          status(
+            "当前未连接本机采集器。请双击同目录的 7.启动.cmd，再使用打开的本机页面；也可在采集设置中离线导入。",
+            "error",
+          );
+          tab("sources");
+          return;
+        }
+        const query = custom === null ? null : String(custom).trim();
+        if (custom !== null && (!query || query.length > 300)) {
+          status("请输入 1 至 300 个字符的检索词。", "error");
+          return;
+        }
+        busy(true);
+        tab("feed");
+        status("正在读取公开 RSS；逐条检查真实日期与文章来源…");
+        try {
+          const jobs =
+            query !== null
+              ? [{ id: "custom", name: "自定义主题" }]
+              : channel
+                ? CHANNELS.filter((c) => c.id === channel)
+                : CHANNELS;
+          const results = await Promise.allSettled(
+            jobs.map(async (job) => {
+              const params = new URLSearchParams({ channel: job.id });
+              if (query !== null) params.set("query", query);
+              const data = await api("/api/feeds?" + params);
+              if (
+                data.app !== "public-news-reader-v2" ||
+                !Array.isArray(data.items)
+              )
+                throw Error("采集器返回的数据格式不正确");
+              return data;
+            }),
+          );
+          let successful = 0,
+            added = 0,
+            received = 0,
+            discarded = 0;
+          const failures = [],
+            report = [],
+            known = new Set(articles.map(articleKey)),
+            incoming = [];
+          results.forEach((result, index) => {
+            if (result.status === "rejected") {
+              failures.push(
+                jobs[index].name + "：" + explainError(result.reason),
+              );
+              return;
+            }
+            successful++;
+            const data = result.value;
+            let valid = 0;
+            data.items.forEach((raw) => {
+              const item = normalize(raw);
+              if (!item || !inWindow(item)) {
+                discarded++;
+                return;
+              }
+              incoming.push(item);
+              valid++;
+              received++;
+              if (!known.has(articleKey(item))) {
+                known.add(articleKey(item));
+                added++;
+              }
+            });
+            discarded += Object.values(data.rejected || {}).reduce(
+              (sum, v) => sum + (Number(v) || 0),
+              0,
+            );
+            report.push(
+              jobs[index].name +
+                " " +
+                valid +
+                " 条" +
+                (data.cached ? "（服务端 3 分钟缓存）" : ""),
+            );
+          });
+          articles = unique([...articles, ...incoming])
+            .filter((a) => inWindow(a))
+            .sort(
+              (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
+            )
+            .slice(0, 600);
+          bookmarks = bookmarks.map((b) => {
+            const update = incoming.find(
+              (a) => articleKey(a) === articleKey(b),
+            );
+            return update ? mergeArticle(b, update) : b;
+          });
+          if (successful) {
+            lastSync = new Date().toISOString();
+            persist();
+          }
+          rebuildPublishers();
+          render();
+          const summary = successful
+            ? "采集完成 " +
+              successful +
+              "/" +
+              jobs.length +
+              " 个通道，收到 " +
+              received +
+              " 条有效记录，新增 " +
+              added +
+              " 条；排除 " +
+              discarded +
+              " 条重复、无效日期或来源不符记录。\n" +
+              report.join("；")
+            : "本次所有通道均采集失败；保留已有缓存，未校验成功的条目不会伪装成新新闻。";
+          status(
+            summary +
+              (initialStorageIssue ? "\n" + initialStorageIssue : "") +
+              (failures.length ? "\n失败通道：" + failures.join("；") : "") +
+              (successful && !lastResults.length
+                ? "\n当前筛选没有结果，可重置筛选查看本次采集。"
+                : ""),
+            !successful ? "error" : failures.length ? "info" : "success",
+          );
+          initialStorageIssue = "";
+        } catch (error) {
+          status(
+            "采集失败：" + explainError(error) + "。已有新闻与收藏保留。",
+            "error",
+          );
+        } finally {
+          busy(false);
+        }
+      }
+      async function resolveOriginal(item) {
+        if (pendingResolution.has(item.id)) return;
+        pendingResolution.add(item.id);
+        render();
+        try {
+          const data = await api(
+              "/api/resolve?" + new URLSearchParams({ id: item.id }),
+              35000,
+            ),
+            url = usableArticleUrl(data.url),
+            domain = host(item.publisherUrl).replace(/^www\./, "");
+          if (!url || !domain || isAggregator(url) || !under(host(url), domain))
+            throw Error("解析地址与 RSS 标注的发布站域名不符");
+          const update = (a) =>
+            articleKey(a) === articleKey(item)
+              ? { ...a, originalUrl: url, linkKind: "publisher" }
+              : a;
+          articles = articles.map(update);
+          bookmarks = bookmarks.map(update);
+          persist();
+          status(
+            "已取得与 RSS 来源域名匹配的文章地址；可以点击“打开原站文章”。未逐篇核验全文。",
+            "success",
+          );
+        } catch (error) {
+          status(
+            "原文地址未能解析：" +
+              explainError(error) +
+              "。仍可通过该条 Google News 链接阅读；不会替换成网站首页。",
+            "error",
+          );
+        } finally {
+          pendingResolution.delete(item.id);
+          render();
+        }
+      }
+      function download(content, type, name) {
+        const url = URL.createObjectURL(new Blob([content], { type })),
+          a = el("a");
+        a.href = url;
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      function mdText(value) {
+        return String(value || "")
+          .replace(/\\/g, "\\\\")
+          .replace(/([\[\]*_`<>#|])/g, "\\$1")
+          .replace(/[\r\n]+/g, " ");
+      }
+      function markdown(list) {
+        let text =
+          "# 公开新闻阅读清单\n\n生成时间：" +
+          dateText(new Date()) +
+          "\n\n来源与发布时间来自 RSS；原英文标题保留，未自动生成摘要或投资判断。\n\n";
+        list.forEach((a, i) => {
+          text +=
+            "## " +
+            (i + 1) +
+            ". " +
+            mdText(a.title) +
+            "\n\n- RSS 标注来源：" +
+            mdText(a.publisher) +
+            "\n- 发布时间：" +
+            dateText(a.publishedAt) +
+            "\n- 采集时间：" +
+            (a.collectedAt ? dateText(a.collectedAt) : "未提供") +
+            "\n- 阅读链接（" +
+            (a.originalUrl
+              ? "原站文章，域名匹配"
+              : isAggregator(a.url)
+                ? "Google News 跳转"
+                : "导入链接，未联网核验") +
+            "）：[打开报道](<" +
+            (a.originalUrl || a.url).replace(/[<>]/g, (c) =>
+              encodeURIComponent(c),
+            ) +
+            ">)\n";
+          if (a.publisherUrl)
+            text +=
+              "- 来源站点：[发布站](<" +
+              a.publisherUrl.replace(/[<>]/g, (c) => encodeURIComponent(c)) +
+              ">)\n";
+          if (a.originalUrl)
+            text +=
+              "- RSS 条目：[Google News / 订阅条目](<" +
+              a.url.replace(/[<>]/g, (c) => encodeURIComponent(c)) +
+              ">)\n";
+          text += "\n";
+        });
+        return text;
+      }
+      function exportMarkdown(onlyBookmarks = false) {
+        const list = onlyBookmarks ? bookmarks.slice() : filteredArticles();
+        if (!list.length) {
+          status("当前没有可导出的新闻。", "info");
+          return;
+        }
+        download(
+          markdown(list),
+          "text/markdown;charset=utf-8",
+          "新闻" +
+            (onlyBookmarks ? "收藏" : "筛选清单") +
+            "-" +
+            new Date().toISOString().slice(0, 10) +
+            ".md",
+        );
+      }
+      function parseFeed(xml) {
+        if (/<!DOCTYPE|<!ENTITY/i.test(xml))
+          throw Error("不支持带文档类型或实体声明的订阅文件");
+        const doc = new DOMParser().parseFromString(xml, "application/xml");
+        if (doc.querySelector("parsererror"))
+          throw Error("RSS / Atom XML 格式错误");
+        if (!["rss", "feed", "RDF"].includes(doc.documentElement.localName))
+          throw Error("文件不是 RSS / Atom");
+        return [...doc.querySelectorAll("item, entry")].map((node) => {
+          const child = (name) =>
+              [...node.children].find((n) => n.localName === name),
+            get = (name) => child(name)?.textContent.trim() || "";
+          const source = child("source");
+          let url = get("link");
+          if (node.localName === "entry") {
+            const alternate = [...node.children].find(
+              (n) =>
+                n.localName === "link" &&
+                (!n.getAttribute("rel") ||
+                  n.getAttribute("rel") === "alternate"),
+            );
+            url = alternate?.getAttribute("href") || "";
+          }
+          return {
+            title: get("title"),
+            url,
+            publisher: source
+              ? source.querySelector("title")?.textContent ||
+                source.textContent ||
+                "来源未标注"
+              : "来源未标注",
+            publisherUrl:
+              source?.getAttribute("url") ||
+              source?.querySelector("link")?.getAttribute("href") ||
+              "",
+            publishedAt: parseDate(get("pubDate") || get("published")),
+            collectedAt: new Date().toISOString(),
+            channel: "离线导入",
+            imported: true,
+          };
+        });
+      }
+      async function importFile(file) {
+        if (!file) return;
+        try {
+          if (file.size > 5 * 1024 * 1024) throw Error("文件不能超过 5 MB");
+          const text = await file.text();
+          let rawItems = [],
+            rawBookmarks = [];
+          if (text.trim().startsWith("{") || text.trim().startsWith("[")) {
+            const data = JSON.parse(text);
+            if (Array.isArray(data)) rawItems = data;
+            else {
+              rawItems = data.articles || data.items;
+              if (!Array.isArray(rawItems))
+                throw Error("JSON 必须包含 articles 或 items 数组");
+              rawBookmarks = Array.isArray(data.bookmarks)
+                ? data.bookmarks
+                : [];
+            }
+          } else rawItems = parseFeed(text);
+          const mapped = rawItems
+              .map((a) => normalize({ ...a, imported: true }))
+              .filter(Boolean),
+            valid = mapped.filter((a) => inWindow(a)),
+            saved = rawBookmarks
+              .map((a) => normalize({ ...a, imported: true }))
+              .filter(Boolean);
+          articles = unique([...articles, ...valid])
+            .filter((a) => inWindow(a))
+            .slice(0, 600);
+          bookmarks = unique([...bookmarks, ...saved]).slice(0, 1000);
+          persist();
+          rebuildPublishers();
+          render();
+          tab("feed");
+          status(
+            "离线导入完成：" +
+              valid.length +
+              " 条近 7 天新闻，" +
+              saved.length +
+              " 条收藏；排除 " +
+              (rawItems.length - valid.length) +
+              " 条无效或超期记录。未联网核验这些条目。",
+            "success",
+          );
+        } catch (error) {
+          status("导入失败：" + explainError(error), "error");
+        } finally {
+          $("importFile").value = "";
+        }
+      }
+      function openSearch(query) {
+        query = (query || $("customQuery").value).trim();
+        const params = new URLSearchParams({
+          q: "(" + query + ") when:7d",
+          hl: "zh-CN",
+          gl: "CN",
+          ceid: "CN:zh-Hans",
+        });
+        window.open(
+          "https://news.google.com/search?" + params,
+          "_blank",
+          "noopener,noreferrer",
+        );
+      }
+      async function init() {
+        loadState();
+        TOPICS.forEach((t) => $("topicFilter").add(new Option(t.name, t.id)));
+        $("topicFilter").add(new Option("其他主题", "OTHER"));
+        document
+          .querySelectorAll("[data-tab]")
+          .forEach((b) =>
+            b.addEventListener("click", () => tab(b.dataset.tab)),
+          );
+        [
+          "timeFilter",
+          "publisherFilter",
+          "topicFilter",
+          "languageFilter",
+          "sortSelect",
+        ].forEach((id) => $(id).addEventListener("change", render));
+        $("searchInput").addEventListener("input", render);
+        $("resetBtn").addEventListener("click", resetFilters);
+        $("syncBtn").addEventListener("click", () => syncNews());
+        $("customFetchBtn").addEventListener("click", () =>
+          syncNews($("customQuery").value),
+        );
+        $("customQuery").addEventListener("keydown", (event) => {
+          if (event.key === "Enter") syncNews($("customQuery").value);
+        });
+        $("openSearchBtn").addEventListener("click", () => openSearch());
+        $("bookmarksBtn").addEventListener("click", () => {
+          renderBookmarks();
+          $("bookmarkDialog").showModal();
+        });
+        $("closeBookmarksBtn").addEventListener("click", () =>
+          $("bookmarkDialog").close(),
+        );
+        $("bookmarkDialog").addEventListener("click", (event) => {
+          if (event.target === $("bookmarkDialog")) {
+            const r = $("bookmarkDialog").getBoundingClientRect();
+            if (
+              event.clientX < r.left ||
+              event.clientX > r.right ||
+              event.clientY < r.top ||
+              event.clientY > r.bottom
+            )
+              $("bookmarkDialog").close();
+          }
+        });
+        $("clearBookmarksBtn").addEventListener("click", () => {
+          bookmarks = [];
+          persist();
+          render();
+        });
+        $("exportBtn").addEventListener("click", () => exportMarkdown());
+        $("exportBookmarksBtn").addEventListener("click", () =>
+          exportMarkdown(true),
+        );
+        $("backupBtn").addEventListener("click", () =>
+          download(
+            JSON.stringify(
+              { version: 2, articles, bookmarks, lastSync },
+              null,
+              2,
+            ),
+            "application/json;charset=utf-8",
+            "新闻阅读台备份.json",
+          ),
+        );
+        $("importFile").addEventListener("change", (e) =>
+          importFile(e.target.files[0]),
+        );
+        $("themeBtn").addEventListener("click", () => {
+          const light = document.documentElement.dataset.theme !== "light";
+          document.documentElement.dataset.theme = light ? "light" : "dark";
+          $("themeBtn").textContent = light ? "深色" : "浅色";
+        });
+        CHANNELS.forEach((channel) => {
+          const row = el("div", undefined, "notice"),
+            top = el("div", undefined, "row");
+          top.append(el("strong", channel.name));
+          const fetchButton = el("button", "采集此通道", "small subtle");
+          fetchButton.dataset.fetchChannel = channel.id;
+          fetchButton.addEventListener("click", () =>
+            syncNews(null, channel.id),
+          );
+          const search = el("button", "查看搜索", "small subtle");
+          search.addEventListener("click", () => openSearch(channel.query));
+          top.append(fetchButton, search);
+          row.append(top, el("p", channel.query, "small muted word-break"));
+          $("channelList").append(row);
+        });
+        rebuildPublishers();
+        render();
+        const clock = () => ($("liveClock").textContent = dateText(new Date()));
+        clock();
+        setInterval(clock, 1000);
+        setInterval(() => {
+          articles = articles.filter((a) => inWindow(a));
+          rebuildPublishers();
+          render();
+        }, 60000);
+        if (location.protocol === "file:") {
+          $("backendState").textContent =
+            "当前以文件方式打开。联网采集请双击同目录的 7.启动.cmd；本页仍支持离线导入、筛选、收藏和导出。";
+          status(
+            initialStorageIssue ||
+              "离线阅读模式：未加载模拟新闻。请使用本机启动入口采集，或在“采集设置”导入文件。",
+          );
+          return;
+        }
+        try {
+          const health = await api("/api/health", 3000);
+          if (health.app !== "public-news-reader-v2")
+            throw Error("此地址不是本机新闻采集器");
+          backendReady = true;
+          $("backendState").textContent =
+            "本机采集器已连接。仅在你点击采集或首次打开空列表时请求公开 RSS；服务端缓存最长 3 分钟。";
+          if (initialStorageIssue) status(initialStorageIssue);
+          if (!articles.length) await syncNews();
+          else
+            status(
+              "已恢复 " +
+                articles.length +
+                " 条近 7 天缓存新闻与 " +
+                bookmarks.length +
+                " 条收藏。点击刷新获取新条目。" +
+                (initialStorageIssue ? "\n" + initialStorageIssue : ""),
+            );
+        } catch (error) {
+          $("backendState").textContent =
+            "本机采集器未连接：" +
+            explainError(error) +
+            "。请使用同目录的 7.启动.cmd。";
+          status("未连接采集服务；已有缓存与离线功能可继续使用。", "error");
+        }
+      }
+      window.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
