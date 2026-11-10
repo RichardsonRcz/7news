@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="icons/icon32.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>公开新闻阅读台 · Chrome 扩展</title>
+    <link rel="stylesheet" href="reader.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <div>
+          <h1>公开新闻阅读台</h1>
+          <p class="muted small">
+            近 7 天 · 保留订阅源标题与发布时间 · 区分原站文章和聚合跳转
+          </p>
+        </div>
+        <div class="actions">
+          <button id="syncBtn" class="primary">刷新新闻</button
+          ><button id="bookmarksBtn">
+            收藏 <span id="bookmarkCount">0</span></button
+          ><button id="exportBtn">导出当前筛选</button
+          ><button id="themeBtn" aria-label="切换明暗主题">浅色</button>
+        </div>
+      </div>
+    </header>
+    <div class="layout">
+      <aside>
+        <section class="panel">
+          <h2>当前阅读范围</h2>
+          <div class="stats">
+            <div class="stat">
+              <strong id="statTotal">0</strong><span>近 7 天条目</span>
+            </div>
+            <div class="stat">
+              <strong id="statSources">0</strong><span>标注来源</span>
+            </div>
+            <div class="stat">
+              <strong id="statVisible">0</strong><span>筛选结果</span>
+            </div>
+          </div>
+          <div id="liveClock" class="meta small"></div>
+          <div id="lastSync" class="meta small">尚未采集</div>
+          <p class="muted small">
+            数字仅统计实际条目，不计算新闻强度或涨跌预测。
+          </p>
+        </section>
+        <section class="panel filters">
+          <h2>阅读筛选</h2>
+          <label class="field"
+            >时间窗口<select id="timeFilter">
+              <option value="1">过去 24 小时</option>
+              <option value="3">过去 3 天</option>
+              <option value="5">过去 5 天</option>
+              <option value="7" selected>过去 7 天</option>
+            </select></label
+          ><label class="field"
+            >文章来源<select id="publisherFilter">
+              <option value="ALL">全部来源</option>
+            </select></label
+          ><label class="field"
+            >主题（标题关键词）<select id="topicFilter">
+              <option value="ALL">全部主题</option>
+            </select></label
+          ><label class="field"
+            >标题语言<select id="languageFilter">
+              <option value="ALL">全部语言 / 原标题</option>
+              <option value="ZH">含中文标题</option>
+              <option value="OTHER">其他语言标题</option>
+            </select></label
+          ><button id="resetBtn" class="sidebar-btn subtle">重置筛选</button>
+          <p class="muted small">
+            主题来自标题关键词匹配；不代表正文分析、来源权威性或投资结论。
+          </p>
+        </section>
+        <section class="panel">
+          <h2>链接说明</h2>
+          <p class="small">
+            <span class="badge publisher">原站文章 · 域名匹配</span> 已取得与
+            RSS 标注来源同域的文章地址。
+          </p>
+          <p class="small">
+            <span class="badge">Google News 跳转</span>
+            订阅源提供的聚合链接，点击后由 Google 转往报道。
+          </p>
+          <p class="muted small">
+            来源名称和时间取自
+            RSS。域名匹配不等于已逐篇核验全文；转载站按实际发布站显示。
+          </p>
+        </section>
+      </aside>
+      <main>
+        <nav aria-label="内容视图">
+          <button class="active" data-tab="feed">新闻列表</button
+          ><button data-tab="topics">主题索引</button
+          ><button data-tab="sources">采集设置</button>
+        </nav>
+        <div id="status" class="status" role="status" aria-live="polite">
+          正在初始化阅读列表…
+        </div>
+        <section id="view-feed">
+          <div class="panel toolbar">
+            <label class="visually-hidden" for="searchInput"
+              >搜索标题或来源</label
+            ><input
+              id="searchInput"
+              type="search"
+              placeholder="搜索标题、文章来源或主题关键词"
+            /><label class="visually-hidden" for="sortSelect">排序方式</label
+            ><select id="sortSelect">
+              <option value="TIME">发布时间：最新优先</option>
+              <option value="SOURCE">按文章来源排序</option>
+            </select>
+          </div>
+          <div id="feedCount" class="feed-count"></div>
+          <div id="newsContainer"></div>
+        </section>
+        <section id="view-topics" hidden>
+          <div class="panel">
+            <h2>近 7 天主题索引</h2>
+            <p class="muted small">
+              基于近 7
+              天标题的关键词匹配；同一报道可以属于多个主题，不自动生成政策或市场判断。
+            </p>
+            <div id="topicGrid" class="topic-grid"></div>
+          </div>
+        </section>
+        <section id="view-sources" hidden>
+          <div class="panel">
+            <h2>采集公开新闻</h2>
+            <p class="muted">
+              默认检索官方发布、Reuters、Bloomberg
+              及政策产业报道。检索词只决定搜索范围，卡片上的来源取自实际 RSS
+              条目。
+            </p>
+            <p id="backendState" class="notice small">
+              Chrome 扩展直接采集，正在准备…
+            </p>
+            <div id="channelList" class="stack"></div>
+            <label class="field"
+              >自定义 Google News 检索词<input
+                id="customQuery"
+                maxlength="300"
+                placeholder="例如：人工智能 OR 医疗 OR 地方债"
+            /></label>
+            <div class="row">
+              <button id="customFetchBtn" class="primary">采集自定义主题</button
+              ><button id="openSearchBtn">在 Google News 查看检索</button>
+            </div>
+            <p class="muted small">
+              所有条目都按真实发布时间过滤。日期缺失、无效、在未来或超过 7
+              天的条目不会进入新闻列表。
+            </p>
+            <details>
+              <summary>离线导入与备份</summary>
+              <p>
+                可导入 RSS / Atom 文件或本页面导出的 JSON
+                备份。离线导入的来源与地址按文件提供值显示，不宣称已联网核验。
+              </p>
+              <div class="row">
+                <label for="importFile">导入文件</label
+                ><input
+                  id="importFile"
+                  type="file"
+                  accept=".xml,.rss,.atom,.json,application/xml,text/xml,application/json"
+                /><button id="backupBtn">导出数据备份</button>
+              </div>
+            </details>
+            <details>
+              <summary>采集边界</summary>
+              <p>
+                扩展阅读页直接请求公开 Google News
+                RSS；不会绕过网站付费墙。原文地址按需解析，若解析失败或与来源域名不符，保留聚合跳转链接。订阅结果不保证覆盖全部公开报道。
+              </p>
+            </details>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer>
+      本页聚合公开新闻元数据，文章版权归原发布方。采集时间与文章发布时间分别记录；原英文标题保留，不伪造翻译或摘要。界面不依赖第三方
+      CDN。
+    </footer>
+    <dialog id="bookmarkDialog" aria-labelledby="bookmarkHeading">
+      <div class="dialog-head">
+        <div>
+          <h2 id="bookmarkHeading">我的新闻收藏</h2>
+          <span class="muted small"
+            >收藏保存完整条目；超过 7 天仍保留在这里。</span
+          >
+        </div>
+        <button id="closeBookmarksBtn" aria-label="关闭收藏">关闭</button>
+      </div>
+      <div id="bookmarkList"></div>
+      <div class="dialog-foot">
+        <span id="storageState" class="small muted"
+          >数据保存在此 Chrome 扩展的本地存储中。</span
+        >
+        <div class="row">
+          <button id="clearBookmarksBtn">清空收藏</button
+          ><button id="exportBookmarksBtn" class="primary">导出收藏</button>
+        </div>
+      </div>
+    </dialog>
+    <script type="module" src="reader.js"></script>
+  </body>
+</html>
