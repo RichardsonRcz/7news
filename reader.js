@@ -1,8 +1,16 @@
-import { CHANNELS, fetchFeed, resolveOriginalUrl } from "./collector.js";
+import {
+  CHANNELS,
+  fetchFeed,
+  resolveOriginalUrl,
+  SOURCE_SCOPE,
+  isLocalSource,
+} from "./collector.js";
 
 ("use strict");
 const DAY = 86400000,
-  STORE_KEY = "public_news_reader_v2";
+  STORE_KEY = "public_news_reader_v2",
+  THEME_KEY = "public_news_reader_theme",
+  DEFAULT_THEME = "light";
 const TOPICS = [
   {
     id: "POLICY",
@@ -98,6 +106,24 @@ function usableArticleUrl(value) {
 function sourceKey(item) {
   return host(item.publisherUrl) || "name:" + item.publisher;
 }
+// 显示层过滤：让缓存里已有的省市级来源也不再出现
+function acceptedSource(a) {
+  return !SOURCE_SCOPE.enabled || !isLocalSource(a.publisher, a.publisherUrl);
+}
+// 默认浅色；用户手动切换后写入扩展存储，下次打开仍保持
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  $("themeBtn").textContent = theme === "light" ? "深色" : "浅色";
+}
+async function initTheme() {
+  let theme = DEFAULT_THEME;
+  try {
+    const saved = await chrome.storage.local.get(THEME_KEY);
+    if (saved[THEME_KEY] === "light" || saved[THEME_KEY] === "dark")
+      theme = saved[THEME_KEY];
+  } catch {}
+  applyTheme(theme);
+}
 function dateText(value) {
   const d = new Date(value);
   return Number.isFinite(d.getTime())
@@ -133,13 +159,13 @@ function topicIds(item) {
   return ids.length ? ids : ["OTHER"];
 }
 function normalize(raw) {
-  if (
-    !raw ||
-    typeof raw !== "object" ||
-    typeof raw.title !== "string" ||
-    !raw.title.trim()
-  )
-    return null;
+  if (!raw || typeof raw !== "object") return null;
+  const sourceTitle =
+    typeof raw.originalTitle === "string" && raw.originalTitle.trim()
+      ? raw.originalTitle
+      : raw.title;
+  if (typeof sourceTitle !== "string" || !sourceTitle.trim()) return null;
+  const originalTitle = sourceTitle.trim().slice(0, 2000);
   const url = usableArticleUrl(raw.url),
     date = Date.parse(parseDate(raw.publishedAt));
   if (!url || !Number.isFinite(date) || date > Date.now()) return null;
@@ -172,7 +198,7 @@ function normalize(raw) {
       typeof raw.id === "string" && /^article-[a-f0-9]{24}$/.test(raw.id)
         ? raw.id
         : "import:" + canonical(url),
-    title: raw.title.trim().slice(0, 2000),
+    title: originalTitle,
     url: canonical(url),
     publisher,
     publisherUrl,
@@ -239,7 +265,7 @@ async function loadState() {
     )
       throw Error("Invalid extension storage");
     articles = unique(data.articles.map(normalize).filter(Boolean))
-      .filter((a) => inWindow(a))
+      .filter((a) => inWindow(a) && acceptedSource(a))
       .slice(0, 600);
     bookmarks = unique(data.bookmarks.map(normalize).filter(Boolean)).slice(
       0,
@@ -306,12 +332,6 @@ function filteredArticles() {
         !topicIds(a).includes($("topicFilter").value)
       )
         return false;
-      const zh = /[\u3400-\u9fff]/.test(a.title);
-      if (
-        ($("languageFilter").value === "ZH" && !zh) ||
-        ($("languageFilter").value === "OTHER" && zh)
-      )
-        return false;
       return (
         !query ||
         [
@@ -327,12 +347,33 @@ function filteredArticles() {
           .includes(query)
       );
     })
-    .sort((a, b) =>
-      $("sortSelect").value === "SOURCE"
+    .sort((a, b) => {
+      // Rule: Bloomberg, Reuters, AP, AFP, Kyodo, Yonhap always get highest priority
+      const isPriority = (item) => {
+        const h = host(item.publisherUrl) || item.publisher.toLowerCase();
+        return (
+          h.includes("bloomberg") ||
+          h.includes("reuters") ||
+          h.includes("apnews") ||
+          h.includes("kyodonews") ||
+          h.includes("yna.co.kr") ||
+          h.includes("rfi.fr") ||
+          h.includes("barrons") ||
+          h.includes("ap") ||
+          h.includes("afp") ||
+          h.includes("kyodo") ||
+          h.includes("yonhap")
+        );
+      };
+      const aP = isPriority(a) ? 1 : 0;
+      const bP = isPriority(b) ? 1 : 0;
+      if (aP !== bP) return bP - aP; // Priority items first
+
+      return $("sortSelect").value === "SOURCE"
         ? a.publisher.localeCompare(b.publisher, "zh-CN") ||
-          Date.parse(b.publishedAt) - Date.parse(a.publishedAt)
-        : Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
-    );
+            Date.parse(b.publishedAt) - Date.parse(a.publishedAt)
+        : Date.parse(b.publishedAt) - Date.parse(a.publishedAt);
+    });
 }
 function empty(message, explanation) {
   const box = el("div", undefined, "empty");
@@ -493,10 +534,9 @@ function render() {
   renderBookmarks();
 }
 function resetFilters() {
-  $("timeFilter").value = "7";
+  $("timeFilter").value = "1";
   $("publisherFilter").value = "ALL";
   $("topicFilter").value = "ALL";
-  $("languageFilter").value = "ALL";
   $("searchInput").value = "";
   $("sortSelect").value = "TIME";
   render();
@@ -602,7 +642,7 @@ async function syncNews(custom = null, channel = null) {
       report.push(jobs[index].name + " " + valid + " 条" + "");
     });
     articles = unique([...articles, ...incoming])
-      .filter((a) => inWindow(a))
+      .filter((a) => inWindow(a) && acceptedSource(a))
       .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
       .slice(0, 600);
     bookmarks = bookmarks.map((b) => {
@@ -818,7 +858,7 @@ async function importFile(file) {
         .map((a) => normalize({ ...a, imported: true }))
         .filter(Boolean);
     articles = unique([...articles, ...valid])
-      .filter((a) => inWindow(a))
+      .filter((a) => inWindow(a) && acceptedSource(a))
       .slice(0, 600);
     bookmarks = unique([...bookmarks, ...saved]).slice(0, 1000);
     await persist();
@@ -857,18 +897,15 @@ function openSearch(query) {
 }
 async function init() {
   await loadState();
+  await initTheme();
   TOPICS.forEach((t) => $("topicFilter").add(new Option(t.name, t.id)));
   $("topicFilter").add(new Option("其他主题", "OTHER"));
   document
     .querySelectorAll("[data-tab]")
     .forEach((b) => b.addEventListener("click", () => tab(b.dataset.tab)));
-  [
-    "timeFilter",
-    "publisherFilter",
-    "topicFilter",
-    "languageFilter",
-    "sortSelect",
-  ].forEach((id) => $(id).addEventListener("change", render));
+  ["timeFilter", "publisherFilter", "topicFilter", "sortSelect"].forEach((id) =>
+    $(id).addEventListener("change", render),
+  );
   $("searchInput").addEventListener("input", render);
   $("resetBtn").addEventListener("click", resetFilters);
   $("syncBtn").addEventListener("click", () => syncNews());
@@ -915,10 +952,13 @@ async function init() {
   $("importFile").addEventListener("change", (e) =>
     importFile(e.target.files[0]),
   );
-  $("themeBtn").addEventListener("click", () => {
-    const light = document.documentElement.dataset.theme !== "light";
-    document.documentElement.dataset.theme = light ? "light" : "dark";
-    $("themeBtn").textContent = light ? "深色" : "浅色";
+  $("themeBtn").addEventListener("click", async () => {
+    const next =
+      document.documentElement.dataset.theme === "light" ? "dark" : "light";
+    applyTheme(next);
+    try {
+      await chrome.storage.local.set({ [THEME_KEY]: next });
+    } catch {}
   });
   CHANNELS.forEach((channel) => {
     const row = el("div", undefined, "notice"),

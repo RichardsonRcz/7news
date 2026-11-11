@@ -2,34 +2,98 @@
 // This module never registers background, startup or timer-based fetches.
 export const CHANNELS = [
   {
-    id: "official",
-    name: "官方发布",
-    query: "(site:gov.cn OR site:news.cn) (政策 OR 国务院 OR 经济) when:7d",
+    id: "national_gov",
+    name: "国务院与核心部委",
+    query: "site:gov.cn (国务院 OR 国家发改委 OR 财政部 OR 中国人民银行 OR 工信部 OR 商务部) 政策 when:7d",
     lang: "zh",
-    domains: ["gov.cn", "news.cn"],
+    domains: ["gov.cn"],
+  },
+  {
+    id: "national_media",
+    name: "国家级主流媒体",
+    query: "(site:xinhuanet.com OR site:people.com.cn OR site:cctv.com) (经济 OR 政策 OR 产业) when:7d",
+    lang: "zh",
+    domains: ["www.people.com.cn", "www.xinhuanet.com", "www.cctv.com"],
   },
   {
     id: "reuters",
-    name: "Reuters",
-    query: "site:reuters.com (China OR Beijing OR PBOC) when:7d",
+    name: "Reuters (路透)",
+    query: "site:reuters.com (China OR Beijing OR PBOC OR economy) when:7d",
     lang: "en",
     domains: ["reuters.com"],
   },
   {
     id: "bloomberg",
-    name: "Bloomberg",
-    query: "site:bloomberg.com (China OR Beijing OR economy) when:7d",
+    name: "Bloomberg (彭博)",
+    query: "site:bloomberg.com (China OR Beijing OR PBOC OR economy) when:7d",
     lang: "en",
     domains: ["bloomberg.com"],
   },
   {
-    id: "policy",
-    name: "政策与产业",
-    query: "(财政部 OR 卫健委 OR 工信部 OR 科技 OR 能源) 政策 when:7d",
-    lang: "zh",
-    domains: [],
+    id: "ap",
+    name: "AP 美联社",
+    query: "site:apnews.com (China OR Beijing OR economy) when:7d",
+    lang: "en",
+    domains: ["apnews.com"],
   },
+  {
+    id: "afp",
+    name: "AFP 法新社",
+    query: "(site:barrons.com OR site:rfi.fr OR site:channelnewsasia.com) (AFP OR 法新社) (China OR Beijing) when:7d",
+    lang: "en",
+    domains: ["barrons.com", "rfi.fr", "channelnewsasia.com"],
+  },
+  {
+    id: "kyodo",
+    name: "共同社 Kyodo",
+    query: "site:english.kyodonews.net (China OR Beijing OR economy) when:7d",
+    lang: "en",
+    domains: ["kyodonews.net"],
+  },
+  {
+    id: "yonhap",
+    name: "韩联社 Yonhap",
+    query: "site:en.yna.co.kr (China OR Beijing OR economy) when:7d",
+    lang: "en",
+    domains: ["yna.co.kr"],
+  }
 ];
+
+// ===== 文章来源范围：只需要改这一段 =====
+// enabled 改成 false 即可恢复"显示全部来源"。
+// 命中 localName / localHost / localChannel 的来源视为省市级，采集与显示时都会排除。
+// 判定顺序：地方频道域名 > 地方域名 > 名称白名单 > 名称地方关键词。
+// 想放行某个地方来源：把它的完整名称加进 keepNames，或删掉对应正则片段。
+export const SOURCE_SCOPE = {
+  enabled: true,
+  localName:
+    /省|市|自治区|特别行政区|经济技术开发区|高新技术产业开发区|高新区|自治州|县委|省委|区委|地区行政公署|人民政府/,
+  localHost:
+    /(?:^|\.)(?:beijing|shanghai|tianjin|chongqing|hebei|shanxi|shaanxi|neimenggu|liaoning|jilin|heilongjiang|jiangsu|zhejiang|anhui|fujian|jiangxi|shandong|henan|hubei|hunan|guangdong|guangxi|hainan|sichuan|guizhou|yunnan|gansu|qinghai|ningxia|xinjiang|xizang|wuhan|baoji|shenzhen|guangzhou|nanjing|hangzhou|chengdu|kfqgw)(?:\.|-)/i,
+  // 人民网 / 新华网 / 央视网的地方频道（2-4 字母子域）；负向前瞻放行国家级频道
+  localChannel:
+    /^(?!www$|politics|finance|world|cpc|theory|opinion|edu|health|sports|ent|house|auto|game|travel|food|pic|jingji|news|tv|military|english|paper|jjckb|xczx)[a-z]{2,4}\.(?:people\.com\.cn|news\.cn|xinhuanet\.com|cctv\.com)$/i,
+  keepNames: new Set([
+    "人民日报",
+    "人民网",
+    "人民网财经",
+    "新华网",
+    "新华社",
+    "央视网",
+    "央视新闻",
+  ]),
+};
+
+export function isLocalSource(publisher = "", publisherUrl = "") {
+  if (!SOURCE_SCOPE.enabled) return false;
+  const name = String(publisher || "").trim();
+  const h = host(publisherUrl).replace(/^www\./, "");
+  if (SOURCE_SCOPE.localChannel.test(h) || SOURCE_SCOPE.localHost.test(h))
+    return true;
+  if (SOURCE_SCOPE.keepNames.has(name)) return false;
+  return SOURCE_SCOPE.localName.test(name);
+}
+
 const MAX_BYTES = 3 * 1024 * 1024;
 const WEEK = 7 * 86400000;
 export function safeUrl(value) {
@@ -220,13 +284,22 @@ export async function parseRss(text, spec, url, now = Date.now()) {
     const source = child("source"),
       publisher = source?.textContent.trim() || "来源未标注",
       publisherUrl = safeUrl(source?.getAttribute("url"));
-    if (
-      spec.domains.length &&
-      !spec.domains.some((domain) => under(host(publisherUrl), domain))
-    ) {
-      rejected.source++;
-      continue;
+
+    const pubHost = host(publisherUrl);
+    if (spec.domains.length) {
+      const matchesDomain = spec.domains.some((domain) => under(pubHost, domain));
+      if (!matchesDomain) {
+        rejected.source++;
+        continue;
+      }
+      // 省市级 / 地方频道来源：按 SOURCE_SCOPE 统一排除
+      // （旧规则会误杀 www.mofcom.gov.cn 等部委站点，已替换为精准匹配）
+      if (isLocalSource(publisher, publisherUrl)) {
+        rejected.source++;
+        continue;
+      }
     }
+
     const identity = canonical(link);
     if (seen.has(identity)) {
       rejected.duplicate++;
@@ -263,7 +336,6 @@ export async function fetchFeed(channel, query = "") {
 }
 export function parseRpcUrls(text) {
   const found = [];
-  // Google returns line-delimited length-prefixed JSON with an anti-XSSI prefix.
   for (const line of text.split("\n")) {
     const clean = line.trim();
     if (!clean.startsWith("[")) continue;
@@ -284,15 +356,13 @@ export function parseRpcUrls(text) {
         else if (typeof cell === "string" && cell.startsWith('["garturlres"')) {
           try {
             pending.push(JSON.parse(cell));
-          } catch {}
+          } catch { }
         }
       }
     }
   }
   return found;
 }
-// Read only inert attribute values. Do not parse the remote page as an HTML
-// document: its base/style/resource tags are unrelated to URL decoding.
 export function decodeParameters(page) {
   const raw = /\bdata-n-a-sg\s*=\s*(["'])(.*?)\1/i.exec(page)?.[2];
   const stamp = /\bdata-n-a-ts\s*=\s*(["'])(\d+)\1/i.exec(page)?.[2];
@@ -318,8 +388,8 @@ export async function resolveOriginalUrl(item) {
     throw Error("缺少聚合条目或来源域名，无法核对原文地址。");
   const page = await googleText(
     "https://news.google.com/rss/articles/" +
-      code +
-      "?hl=en-US&gl=US&ceid=US:en",
+    code +
+    "?hl=en-US&gl=US&ceid=US:en",
   );
   const { signature, stamp } = decodeParameters(page);
   const context = [

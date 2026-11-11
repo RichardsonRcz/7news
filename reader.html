@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="icons/icon32.png" />
@@ -10,18 +10,25 @@
   <body>
     <header>
       <div class="header-inner">
-        <div>
-          <h1>公开新闻阅读台</h1>
-          <p class="muted small">
-            近 7 天 · 保留订阅源标题与发布时间 · 区分原站文章和聚合跳转
-          </p>
+        <div class="brand-group">
+          <div class="mac-traffic-lights" aria-hidden="true">
+            <span class="dot close"></span>
+            <span class="dot minimize"></span>
+            <span class="dot zoom"></span>
+          </div>
+          <div>
+            <h1>公开新闻阅读台</h1>
+            <p class="muted small">
+              近 7 天 · 保留订阅源标题与发布时间 · 区分原站文章和聚合跳转
+            </p>
+          </div>
         </div>
         <div class="actions">
           <button id="syncBtn" class="primary">刷新新闻</button
           ><button id="bookmarksBtn">
             收藏 <span id="bookmarkCount">0</span></button
           ><button id="exportBtn">导出当前筛选</button
-          ><button id="themeBtn" aria-label="切换明暗主题">浅色</button>
+          ><button id="themeBtn" aria-label="切换明暗主题">深色</button>
         </div>
       </div>
     </header>
@@ -50,10 +57,10 @@
           <h2>阅读筛选</h2>
           <label class="field"
             >时间窗口<select id="timeFilter">
-              <option value="1">过去 24 小时</option>
+              <option value="1" selected>过去 24 小时</option>
               <option value="3">过去 3 天</option>
               <option value="5">过去 5 天</option>
-              <option value="7" selected>过去 7 天</option>
+              <option value="7">过去 7 天</option>
             </select></label
           ><label class="field"
             >文章来源<select id="publisherFilter">
@@ -62,12 +69,6 @@
           ><label class="field"
             >主题（标题关键词）<select id="topicFilter">
               <option value="ALL">全部主题</option>
-            </select></label
-          ><label class="field"
-            >标题语言<select id="languageFilter">
-              <option value="ALL">全部语言 / 原标题</option>
-              <option value="ZH">含中文标题</option>
-              <option value="OTHER">其他语言标题</option>
             </select></label
           ><button id="resetBtn" class="sidebar-btn subtle">重置筛选</button>
           <p class="muted small">
@@ -179,8 +180,7 @@
       </main>
     </div>
     <footer>
-      本页聚合公开新闻元数据，文章版权归原发布方。采集时间与文章发布时间分别记录；原英文标题保留，不伪造翻译或摘要。界面不依赖第三方
-      CDN。
+      本页聚合公开新闻元数据，文章版权归原发布方。采集时间与文章发布时间分别记录。界面不依赖第三方 CDN。
     </footer>
     <dialog id="bookmarkDialog" aria-labelledby="bookmarkHeading">
       <div class="dialog-head">

@@ -1,11 +1,15 @@
 {
   "manifest_version": 3,
   "name": "公开新闻阅读台",
-  "version": "1.0.0",
-  "description": "手动刷新公开新闻，保留真实标题、来源和发布时间。支持 F5、收藏、筛选及导出。",
+  "version": "1.1.2",
+  "description": "手动刷新公开新闻，按时间、来源和主题筛选，中英文报道共同阅读。",
   "minimum_chrome_version": "120",
-  "permissions": ["storage"],
-  "host_permissions": ["https://news.google.com/*"],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://news.google.com/*"
+  ],
   "action": {
     "default_title": "打开公开新闻阅读台",
     "default_icon": {
